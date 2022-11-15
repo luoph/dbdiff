@@ -7,9 +7,18 @@ import (
 	"time"
 )
 
-func checkOption(opt string, options []string) bool {
+func findInSet(opt string, options []string) bool {
 	for _, it := range options {
-		if opt == it {
+		if opt == strings.TrimSpace(it) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsInSet(opt string, options []string) bool {
+	for _, it := range options {
+		if strings.Contains(opt, strings.TrimSpace(it)) {
 			return true
 		}
 	}
@@ -116,15 +125,15 @@ func DataDiff(srcDB, dstDB *DB, conf *Config) bool {
 
 	options := strings.Split(conf.Options, ",")
 	// group by update/insert/delete
-	if checkOption("update", options) {
+	if findInSet("update", options) {
 		generateSQL("update", updateList, out)
 	}
 
-	if checkOption("insert", options) {
+	if findInSet("insert", options) {
 		generateSQL("insert", insertList, out)
 	}
 
-	if checkOption("delete", options) {
+	if findInSet("delete", options) {
 		generateSQL("delete", deleteList, out)
 	}
 

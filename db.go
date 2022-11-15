@@ -297,6 +297,16 @@ func (d *DB) GetObjectList(objectType ObjectType, include string, exclude string
 		exclude = strings.ToLower(exclude)
 	}
 
+	var includeList []string
+	if len(include) > 0 {
+		includeList = strings.Split(include, ",")
+	}
+
+	var excludeList []string
+	if len(exclude) > 0 {
+		excludeList = strings.Split(exclude, ",")
+	}
+
 	var result []string
 	for _, d := range data {
 		var name string
@@ -309,11 +319,12 @@ func (d *DB) GetObjectList(objectType ObjectType, include string, exclude string
 			name = d.Get("Trigger").(string)
 		}
 
+		var lowerName = strings.ToLower(name)
 		bIgnore := false
-		if include != "" && !strings.Contains(strings.ToLower(name), include) {
+		if len(includeList) > 0 && !containsInSet(lowerName, includeList) {
 			bIgnore = true
 		}
-		if exclude != "" && strings.Contains(strings.ToLower(name), exclude) {
+		if len(excludeList) > 0 && containsInSet(lowerName, excludeList) {
 			bIgnore = true
 		}
 
