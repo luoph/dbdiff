@@ -18,6 +18,11 @@ func main() {
 	}
 	defer srcDB.Close()
 
+	// default options
+	if len(conf.Options) <= 0 {
+		conf.Options = "insert,delete,update"
+	}
+
 	if conf.DiffType == "schema" || conf.DiffType == "data" {
 		// open target db
 		dstDB := &DB{}
@@ -32,6 +37,7 @@ func main() {
 		} else {
 			isUpdate = DataDiff(srcDB, dstDB, conf)
 		}
+
 		if isUpdate {
 			log.Printf("Generated Update Script..%s!\n", conf.Output)
 		} else {

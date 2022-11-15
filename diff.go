@@ -40,6 +40,7 @@ type DiffRow struct {
 	Compare CompareType // 1=alter , 2 = insert, 3 = delete
 	Data    []*KeyValue
 	Keys    []*KeyValue
+	table   string
 }
 
 // GetKey : get key data string
@@ -71,7 +72,7 @@ func getDataStr(v interface{}) string {
 }
 
 // GenerateSQL : generate sql string
-func (d *DiffRow) GenerateSQL(name string) string {
+func (d *DiffRow) GenerateSQL(table string) string {
 	switch d.Compare {
 	case INSERT:
 		var keys, values string
@@ -83,7 +84,7 @@ func (d *DiffRow) GenerateSQL(name string) string {
 			keys += fmt.Sprintf("`%s`", d.Key)
 			values += getDataStr(d.Value)
 		}
-		return fmt.Sprintf("INSERT INTO `%s` (%s) VALUES (%s);", name, keys, values)
+		return fmt.Sprintf("INSERT INTO `%s` (%s) VALUES (%s);", table, keys, values)
 	case UPDATE:
 		var keys, values string
 		for _, k := range d.Keys {
@@ -98,7 +99,7 @@ func (d *DiffRow) GenerateSQL(name string) string {
 			}
 			values += fmt.Sprintf("`%s` = %s", d.Key, getDataStr(d.Value))
 		}
-		return fmt.Sprintf("UPDATE `%s` SET %s WHERE %s;", name, values, keys)
+		return fmt.Sprintf("UPDATE `%s` SET %s WHERE %s;", table, values, keys)
 	case DELETE:
 		var keys string
 		for _, k := range d.Keys {
@@ -107,7 +108,7 @@ func (d *DiffRow) GenerateSQL(name string) string {
 			}
 			keys += fmt.Sprintf("`%s` = %s", k.Key, getDataStr(k.Value))
 		}
-		return fmt.Sprintf("DELETE FROM `%s` WHERE %s;", name, keys)
+		return fmt.Sprintf("DELETE FROM `%s` WHERE %s;", table, keys)
 	}
 	return ""
 }

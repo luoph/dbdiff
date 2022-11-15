@@ -404,7 +404,7 @@ func (t *Table) compare(d *Table) string {
 		return ""
 	}
 
-	result := fmt.Sprintf("ALTER TABLE %s\n\t", t.Name)
+	result := fmt.Sprintf("ALTER TABLE `%s`\n\t", t.Name)
 	result += strings.Join(updates, ",\n\t")
 	/*
 		for i, u := range updates {
@@ -424,7 +424,7 @@ func (t *Table) GenerateCreateSQL() string {
 
 // GenerateDropSQL ...
 func (t *Table) GenerateDropSQL() string {
-	return fmt.Sprintf("DROP TABLE %s;", t.Name)
+	return fmt.Sprintf("DROP TABLE `%s`;", t.Name)
 }
 
 // DiffTable ...

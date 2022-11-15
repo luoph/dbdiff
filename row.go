@@ -97,7 +97,7 @@ func checkIgnoreColumn(src, dst []string) bool {
 }
 
 // CompareRows : compare rows
-func CompareRows(src, dst []*Row, keys []string, ignoreColumns []string) []*DiffRow {
+func CompareRows(table string, src, dst []*Row, keys []string, ignoreColumns []string) []*DiffRow {
 	srcMap := reMapRows(src, keys)
 	dstMap := reMapRows(dst, keys)
 
@@ -115,6 +115,7 @@ func CompareRows(src, dst []*Row, keys []string, ignoreColumns []string) []*Diff
 					Compare: UPDATE,
 					Keys:    s.GetKeyValue(keys),
 					Data:    s.GetKeyValue(changeCols),
+					table:   table,
 				})
 			}
 		}
@@ -130,6 +131,7 @@ func CompareRows(src, dst []*Row, keys []string, ignoreColumns []string) []*Diff
 			Compare: INSERT,
 			Keys:    s.GetKeyValue(keys), // for sort
 			Data:    s.GetKeyValue(nil),
+			table:   table,
 		})
 	}
 
@@ -138,6 +140,7 @@ func CompareRows(src, dst []*Row, keys []string, ignoreColumns []string) []*Diff
 		result = append(result, &DiffRow{
 			Compare: DELETE,
 			Keys:    d.GetKeyValue(keys),
+			table:   table,
 		})
 	}
 

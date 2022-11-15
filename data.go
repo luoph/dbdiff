@@ -7,6 +7,28 @@ import (
 	"time"
 )
 
+func checkOption(opt string, options []string) bool {
+	for _, it := range options {
+		if opt == it {
+			return true
+		}
+	}
+	return false
+}
+
+func generateSQL(opt string, mapList map[string][]*DiffRow, out *Output) {
+	if len(mapList) > 0 {
+		out.Printf("\n# ********************************* %s SQL ********************************* #\n", strings.ToUpper(opt))
+	}
+
+	for table := range mapList {
+		out.Printf("\n-- ------------------------------- %s ------------------------------- --\n", table)
+		for _, d := range mapList[table] {
+			out.Println(d.GenerateSQL(d.table))
+		}
+	}
+}
+
 // DataDiff ...
 func DataDiff(srcDB, dstDB *DB, conf *Config) bool {
 	var isUpdate bool
@@ -20,6 +42,7 @@ func DataDiff(srcDB, dstDB *DB, conf *Config) bool {
 	}()
 
 	out.Printf("-- Create Date : %s\n", time.Now())
+	out.Printf("\nSET FOREIGN_KEY_CHECKS = 0;\n")
 
 	// diff data
 	// get table list.
@@ -29,9 +52,12 @@ func DataDiff(srcDB, dstDB *DB, conf *Config) bool {
 	}
 
 	// check target db.
-	for _, t := range tableList {
+	updateList := make(map[string][]*DiffRow)
+	insertList := make(map[string][]*DiffRow)
+	deleteList := make(map[string][]*DiffRow)
 
-		// log.Printf("compare table.....%s", t)
+	for _, t := range tableList {
+		log.Printf("start compare table %s ...", t)
 		// check target db.
 		srcTable := srcDB.GetTableInfo(t)
 		if srcTable == nil {
@@ -66,21 +92,42 @@ func DataDiff(srcDB, dstDB *DB, conf *Config) bool {
 		}
 
 		// Compare data...
-		result := CompareRows(srcData, dstData, srcTable.GetPrimaryKey(), strings.Split(conf.IgnoreColumn, ","))
+		result := CompareRows(t, srcData, dstData, srcTable.GetPrimaryKey(), strings.Split(conf.IgnoreColumn, ","))
 		if len(result) > 0 {
-			out.Printf("\n-- ----------------------------------------- --\n")
-			out.Printf("-- GENERATE UPDATE TABLE DATA %s\n", t)
-			out.Printf("-- ----------------------------------------- --\n")
+			for _, d := range result {
+				switch d.Compare {
+				case INSERT:
+					insertList[t] = append(insertList[t], d)
+					break
+				case UPDATE:
+					updateList[t] = append(updateList[t], d)
+					break
+				case DELETE:
+					deleteList[t] = append(deleteList[t], d)
+					break
+				}
+				// out.Println(d.GenerateSQL(t))
+				isUpdate = true
+			}
 		}
-		for _, r := range result {
-			out.Println(r.GenerateSQL(t))
-			isUpdate = true
-		}
-		log.Printf("compare table %s ... count=%d\n", t, len(result))
-	}
-	if isUpdate {
-		out.Printf("\n\nCOMMIT;")
+
+		log.Printf("finish compare table %s ... count=%d\n", t, len(result))
 	}
 
+	options := strings.Split(conf.Options, ",")
+	// group by update/insert/delete
+	if checkOption("update", options) {
+		generateSQL("update", updateList, out)
+	}
+
+	if checkOption("insert", options) {
+		generateSQL("insert", insertList, out)
+	}
+
+	if checkOption("delete", options) {
+		generateSQL("delete", deleteList, out)
+	}
+
+	out.Printf("\nSET FOREIGN_KEY_CHECKS = 1;\n")
 	return isUpdate
 }

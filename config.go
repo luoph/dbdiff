@@ -28,6 +28,7 @@ type Config struct {
 	Include      string `json:"include"`
 	Exclude      string `json:"exclude"`
 	Output       string `json:"output"`
+	Options      string `json:"options"`
 	IgnoreColumn string `json:"ignore_column"`
 }
 
@@ -78,6 +79,7 @@ func ParseArgs() (*Config, error) {
 	flag.StringVar(&config.Include, "include", "", "include object name,name,....")
 	flag.StringVar(&config.Exclude, "exclude", "", "exclude object name,name,name,...")
 	flag.StringVar(&config.IgnoreColumn, "ignore_column", "", "ignore column split column,column,... ")
+	flag.StringVar(&config.Options, "options", "", "options: insert/delete/update")
 	flag.StringVar(&config.Output, "output", "", "result file")
 	flag.BoolVar(&Debug, "debug", false, "debug mode")
 
