@@ -26,12 +26,12 @@ func (c *Column) String() string {
 		c.Idx, c.Name, c.Type, c.Null, c.Default, c.Extra, c.Comment)
 }
 
-func (c *Column) compare(dst *Column) bool {
-	if c.Type != dst.Type ||
-		c.Null != dst.Null ||
-		c.Default != dst.Default ||
-		c.Extra != dst.Extra ||
-		c.Comment != dst.Comment {
+func (src *Column) compare(dst *Column) bool {
+	if src.Type != dst.Type ||
+		src.Null != dst.Null ||
+		src.Default != dst.Default ||
+		src.Extra != dst.Extra ||
+		src.Comment != dst.Comment {
 		return false
 	}
 	return true
@@ -168,7 +168,7 @@ func (d *DB) GetTableInfo(name string) *Table {
 	result := &Table{Name: name}
 	{
 		query := fmt.Sprintf("SHOW TABLE STATUS LIKE '%s'", name)
-		data, err := d.GetData(query, nil)
+		data, err := d.GetData(name, query, nil)
 		if err != nil {
 			log.Fatalln("get data error", query, err)
 			return nil
@@ -186,7 +186,7 @@ func (d *DB) GetTableInfo(name string) *Table {
 	// get column info..
 	{
 		query := fmt.Sprintf("SHOW FULL COLUMNS FROM %s", name)
-		data, err := d.GetData(query, nil)
+		data, err := d.GetData(name, query, nil)
 		if err != nil {
 			log.Fatalln("get data error", query, err)
 			return nil
@@ -212,14 +212,7 @@ func (d *DB) GetTableInfo(name string) *Table {
 			// 컬럼 타입이 숫자일 경우 int(10) -> int 로 변경.
 			// DB 버전에 따라 다르게 보이는 이슈.
 			// zerofill 옵션이 아닐경우에는 int 로 통일.
-			if strings.HasPrefix(col.Type, "tinyint") ||
-				strings.HasPrefix(col.Type, "smallint") ||
-				strings.HasPrefix(col.Type, "mediumint") ||
-				strings.HasPrefix(col.Type, "int") ||
-				strings.HasPrefix(col.Type, "bigint") ||
-				strings.HasPrefix(col.Type, "float") ||
-				strings.HasPrefix(col.Type, "double") ||
-				strings.HasPrefix(col.Type, "decimal") {
+			if isIntegerType(col.Type) || isFloatType(col.Type) {
 				col.Type = strings.Split(col.Type, "(")[0]
 			}
 
@@ -231,7 +224,7 @@ func (d *DB) GetTableInfo(name string) *Table {
 	// get index..
 	{
 		query := fmt.Sprintf("SHOW INDEX FROM %s", name)
-		data, err := d.GetData(query, nil)
+		data, err := d.GetData(name, query, nil)
 		if err != nil {
 			log.Fatalln("get data error", query, err)
 			return nil

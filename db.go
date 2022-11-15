@@ -68,8 +68,45 @@ func (d *DB) Close() {
 	}
 }
 
+func isIntegerType(str string) bool {
+	return strings.HasPrefix(str, "tinyint") ||
+		strings.HasPrefix(str, "smallint") ||
+		strings.HasPrefix(str, "mediumint") ||
+		strings.HasPrefix(str, "int") ||
+		strings.HasPrefix(str, "bigint")
+}
+
+func isFloatType(str string) bool {
+	return strings.HasPrefix(str, "float") ||
+		strings.HasPrefix(str, "double") ||
+		strings.HasPrefix(str, "decimal")
+}
+
+func isCharType(str string) bool {
+	return strings.HasPrefix(str, "char") ||
+		strings.HasPrefix(str, "varchar") ||
+		strings.HasPrefix(str, "text") ||
+		strings.HasPrefix(str, "tinytext") ||
+		strings.HasPrefix(str, "mediumtext") ||
+		strings.HasPrefix(str, "longtext") ||
+		strings.HasPrefix(str, "json")
+}
+
+func isBlobType(str string) bool {
+	return strings.HasPrefix(str, "tinyblob") ||
+		strings.HasPrefix(str, "blob") ||
+		strings.HasPrefix(str, "mediumblob") ||
+		strings.HasPrefix(str, "longblob")
+}
+
+func isDateType(str string) bool {
+	return strings.HasPrefix(str, "date") ||
+		strings.HasPrefix(str, "datetime") ||
+		strings.HasPrefix(str, "timestamp")
+}
+
 // GetData : get db rows
-func (d *DB) GetData(query string, columns map[string]*Column) ([]*Row, error) {
+func (d *DB) GetData(table string, query string, columns map[string]*Column) ([]*Row, error) {
 
 	// Execute the query
 	rows, err := d.DB.Query(query)
@@ -112,26 +149,20 @@ func (d *DB) GetData(query string, columns map[string]*Column) ([]*Row, error) {
 			var value interface{}
 			if col != nil {
 				if columns != nil {
-					if strings.HasPrefix(columns[columnNames[idx]].Type, "tinyint") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "smallint") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "mediumint") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "int") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "bigint") {
+					var colName = columns[columnNames[idx]].Name
+					var colType = columns[columnNames[idx]].Type
+					if isIntegerType(colType) {
 						value, _ = strconv.Atoi(string(col))
-					} else if strings.HasPrefix(columns[columnNames[idx]].Type, "float") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "double") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "decimal") {
+					} else if isFloatType(colType) {
 						value, _ = strconv.ParseFloat(string(col), 64)
-					} else if strings.HasPrefix(columns[columnNames[idx]].Type, "char") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "varchar") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "json") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "text") {
+					} else if isCharType(colType) {
 						value = mysqlEscape(col)
-					} else if strings.HasPrefix(columns[columnNames[idx]].Type, "date") ||
-						strings.HasPrefix(columns[columnNames[idx]].Type, "datetime") {
+					} else if isDateType(colType) {
 						value = string(col)
+					} else if isBlobType(colType) {
+						value = col
 					} else {
-						log.Fatalln("invalid data type", columns[columnNames[idx]].Name, columns[columnNames[idx]].Type)
+						log.Fatalln("invalid data type table: "+table, "column: "+colName, "type: "+colType)
 					}
 				} else {
 					value = string(col)
@@ -142,6 +173,7 @@ func (d *DB) GetData(query string, columns map[string]*Column) ([]*Row, error) {
 
 		result = append(result, rowData)
 	}
+
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
@@ -187,7 +219,7 @@ func (d *DB) GetScript(objectType ObjectType, objectName string) (string, error)
 
 	//log.Println(query)
 
-	data, err := d.GetData(query, nil)
+	data, err := d.GetData(objectName, query, nil)
 	if err != nil {
 		return "", err
 	}
@@ -230,7 +262,7 @@ func (d *DB) GetObjectComments(objectType ObjectType, objectName string) string 
 		query = "SHOW PROCEDURE STATUS WHERE Db = DATABASE() AND Name='" + objectName + "'"
 	}
 
-	data, err := d.GetData(query, nil)
+	data, err := d.GetData(objectName, query, nil)
 	if err != nil || len(data) == 0 {
 		return ""
 	}
@@ -253,7 +285,7 @@ func (d *DB) GetObjectList(objectType ObjectType, include string, exclude string
 		query = "SHOW TRIGGERS"
 	}
 
-	data, err := d.GetData(query, nil)
+	data, err := d.GetData("DATABASE", query, nil)
 	if err != nil {
 		return nil, err
 	}

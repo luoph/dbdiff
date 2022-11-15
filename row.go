@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // Row : db row data..
 type Row struct {
@@ -60,11 +62,13 @@ func (r *Row) GetPrimaryKey(keys []string) string {
 	return result
 }
 
-func (r *Row) compare(dst *Row) []string {
+func (src *Row) compare(dst *Row) []string {
 	var changeCols []string
-	for i := 0; i < len(r.Data); i++ {
-		if r.Data[i] != dst.Data[i] {
-			changeCols = append(changeCols, r.getKeyStr(i))
+	for i := 0; i < len(src.Data); i++ {
+		var srcData = getDataStr(src.Data[i])
+		var dstData = getDataStr(dst.Data[i])
+		if srcData != dstData {
+			changeCols = append(changeCols, src.getKeyStr(i))
 		}
 	}
 	return changeCols

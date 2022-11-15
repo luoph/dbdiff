@@ -54,13 +54,13 @@ func DataDiff(srcDB, dstDB *DB, conf *Config) bool {
 
 		query := fmt.Sprintf("SELECT * FROM %s", t)
 		// load src db rows
-		srcData, err := srcDB.GetData(query, srcTable.Cols)
+		srcData, err := srcDB.GetData(t, query, srcTable.Cols)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// load dst db rows
-		dstData, err := dstDB.GetData(query, dstTable.Cols)
+		dstData, err := dstDB.GetData(t, query, dstTable.Cols)
 		if err != nil {
 			log.Fatal(err)
 		}

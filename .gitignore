@@ -2,3 +2,7 @@
 *.exe
 *.sql
 go.sum
+/__debug_bin
+/.DS_Store
+/dbdiff
+output

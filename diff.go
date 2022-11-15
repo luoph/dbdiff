@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strconv"
@@ -58,6 +59,9 @@ func getDataStr(v interface{}) string {
 		return strconv.Itoa(v.(int))
 	case float64:
 		return strconv.FormatFloat(v.(float64), 'f', -1, 64)
+	case sql.RawBytes:
+		var hex = fmt.Sprintf("%X", v)
+		return fmt.Sprintf("X'%s'", hex)
 	case nil:
 		return "NULL"
 	default:
@@ -73,37 +77,37 @@ func (d *DiffRow) GenerateSQL(name string) string {
 		var keys, values string
 		for _, d := range d.Data {
 			if len(keys) > 0 {
-				keys += ","
-				values += ","
+				keys += ", "
+				values += ", "
 			}
-			keys += d.Key
+			keys += fmt.Sprintf("`%s`", d.Key)
 			values += getDataStr(d.Value)
 		}
-		return fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s);", name, keys, values)
+		return fmt.Sprintf("INSERT INTO `%s` (%s) VALUES (%s);", name, keys, values)
 	case UPDATE:
 		var keys, values string
 		for _, k := range d.Keys {
 			if len(keys) > 0 {
 				keys += " AND "
 			}
-			keys += fmt.Sprintf("%s=%s", k.Key, getDataStr(k.Value))
+			keys += fmt.Sprintf("`%s` = %s", k.Key, getDataStr(k.Value))
 		}
 		for _, d := range d.Data {
 			if len(values) > 0 {
 				values += ", "
 			}
-			values += fmt.Sprintf("%s=%s", d.Key, getDataStr(d.Value))
+			values += fmt.Sprintf("`%s` = %s", d.Key, getDataStr(d.Value))
 		}
-		return fmt.Sprintf("UPDATE %s SET %s WHERE %s;", name, values, keys)
+		return fmt.Sprintf("UPDATE `%s` SET %s WHERE %s;", name, values, keys)
 	case DELETE:
 		var keys string
 		for _, k := range d.Keys {
 			if len(keys) > 0 {
 				keys += " AND "
 			}
-			keys += fmt.Sprintf("%s=%s", k.Key, getDataStr(k.Value))
+			keys += fmt.Sprintf("`%s` = %s", k.Key, getDataStr(k.Value))
 		}
-		return fmt.Sprintf("DELETE FROM %s WHERE %s;", name, keys)
+		return fmt.Sprintf("DELETE FROM `%s` WHERE %s;", name, keys)
 	}
 	return ""
 }
