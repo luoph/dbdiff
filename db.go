@@ -285,26 +285,19 @@ func (d *DB) GetObjectList(objectType ObjectType, include string, exclude string
 		query = "SHOW TRIGGERS"
 	}
 
-	data, err := d.GetData("DATABASE", query, nil)
+	data, err := d.GetData("SCHEMA", query, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if include != "" {
-		include = strings.ToLower(include)
-	}
-	if exclude != "" {
-		exclude = strings.ToLower(exclude)
-	}
-
 	var includeList []string
 	if len(include) > 0 {
-		includeList = strings.Split(include, ",")
+		includeList = strings.Split(strings.ToLower(include), ",")
 	}
 
 	var excludeList []string
 	if len(exclude) > 0 {
-		excludeList = strings.Split(exclude, ",")
+		excludeList = strings.Split(strings.ToLower(exclude), ",")
 	}
 
 	var result []string
