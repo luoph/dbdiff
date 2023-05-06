@@ -1,8 +1,9 @@
+.idea
 *.exe
 *.sql
 go.sum
-/__debug_bin
-/.DS_Store
-/dbdiff
+__debug_bin
+.DS_Store
+dbdiff
 output
 conf-*.json
