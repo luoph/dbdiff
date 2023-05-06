@@ -39,7 +39,7 @@ func main() {
 		}
 
 		if isUpdate {
-			log.Printf("Generated Update Script..%s!\n", conf.Output)
+			log.Printf("Generated Update Script: %s!\n", conf.Output)
 		} else {
 			log.Println("Not Found Diff! ..BYE~!")
 		}
